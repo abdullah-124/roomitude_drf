@@ -8,9 +8,9 @@ from products.serializers import FurnitureProductSerializer
 # Create your views here.
 class CategoryView(APIView):
     def get(self, request, *args, **kwargs):
-        category = Category.objects.all()   
-        serializer = CategorySerializer(category, many=True)
-        return Response(serializer.data, *args, **kwargs)
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True, context={'request': request})
+        return Response(serializer.data)
 
 class ProductByCategory(APIView):
     def get(self,request, slug, *args, **kwargs):

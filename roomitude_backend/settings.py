@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-@6ofl23&5&3!dic7ppdjr3(*xvx04@5=+@8m6psf2zp8p4wb4v
 DEBUG = True
 
 ALLOWED_HOSTS = []
-# abstract user
+# abstract user model
 AUTH_USER_MODEL = 'account.User'
 
 # Application definition
@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'site_admin',
@@ -43,13 +44,17 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # React dev server
+    "http://127.0.0.1:3000",
+]
 ROOT_URLCONF = 'roomitude_backend.urls'
 
 TEMPLATES = [
@@ -116,7 +121,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 # media 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
