@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verify Your Email</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f8fa;
+      padding: 30px;
+    }
+    .container {
+      max-width: 600px;
+      background-color: #ffffff;
+      margin: auto;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    .button {
+      background-color: #007bff;
+      color: #ffffff !important;
+      padding: 14px 25px;
+      text-align: center;
+      display: inline-block;
+      border-radius: 5px;
+      text-decoration: none;
+      margin-top: 20px;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #888888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello {{ user.email }},</h2>
+    <p>Thanks for registering with <strong>{{ project_name }}</strong>!</p>
+    <p>Please verify your email address by clicking the button below:</p>
+    
+    <a href="{{ verify_url }}" class="button">Verify Email</a>
+
+    <p>If you didn’t create this account, you can safely ignore this email.</p>
+
+    <div class="footer">
+      If you have any questions, contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+    </div>
+  </div>
+</body>
+</html>
