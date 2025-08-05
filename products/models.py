@@ -27,7 +27,13 @@ class FurnitureProduct(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            slug = base_slug
+            num = 1
+            while FurnitureProduct.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{num}"
+                num += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def __str__(self):
