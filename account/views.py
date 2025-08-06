@@ -1,30 +1,19 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth import logout
-from account.models import User
-
-from .serializers import RegisterSerializer
-
-class RegisterView(generics.CreateAPIView, generics.DestroyAPIView):
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
-# verify email 
-# accounts/views.py
-from rest_framework import generics, status
-from rest_framework.response import Response
-from .models import User
-from .serializers import RegisterSerializer
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken,TokenError
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from account.models import User
+from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer
+
+
 
 # user registration view
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
 
+# verify email 
 class VerifyEmailView(APIView):
     def get(self, request):
         token = request.GET.get("token")
@@ -38,20 +27,36 @@ class VerifyEmailView(APIView):
                 user.save()
 
             refresh = RefreshToken.for_user(user)
+            # serialize user data
+            user_data = UserSerializer(user).data
             return Response({
                 "message": "Email verified, login successful.",
                 "access": str(refresh.access_token),
-                "refresh": str(refresh)
+                "refresh": str(refresh), 
+                "user": user_data,
             })
 
         except Exception as e:
             return Response({"detail": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
+# USER LOGIN VIEW
+class UserLoginView(APIView):
+    def post(self, request):
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    
+class UserLogoutView(APIView):
+    permission_classes = [IsAuthenticated]  # requires valid access token
 
     def post(self, request):
-        logout(request)
-        return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
-    
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # marks the refresh token as invalid
+            return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+        except KeyError:
+            return Response({"detail": "Refresh token not provided."}, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            return Response({"detail": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)

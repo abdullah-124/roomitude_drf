@@ -1,6 +1,6 @@
 from django.conf import settings
 from rest_framework import serializers
-from django.core.mail import send_mail
+from django.contrib.auth import authenticate
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
@@ -17,14 +17,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
+        self.send_verification_email(user)
         user.is_active = False
         user.save()
-        self.send_verification_email(user)
         return user
     # send verification mail
     def send_verification_email(self, user):
         token = str(RefreshToken.for_user(user).access_token)
-        verify_url = f"http://localhost:8000/api/account/verify-email/?token={token}"
+        verify_url = f"http://localhost:5173/verify_email/?token={token}"
 
         subject = "Verify Your Roomitude Account"
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -43,3 +43,38 @@ class RegisterSerializer(serializers.ModelSerializer):
         msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
         msg.attach_alternative(html_content, "text/html")
         msg.send()
+
+# user serializer for sending user data to the user account
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ['password']
+
+# user login serializer
+
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only = True)
+    # recive 
+    # {"username":"admin", "password":"password"}
+    def validate(self, attrs):
+        username = attrs.get('username')
+        password = attrs.get('password')
+        if not username or not password:
+            raise serializers.ValidationError("Both username and password are required.")
+        
+        # check the username, and password 
+        user = authenticate(username=username,password=password)
+        if not user:
+            raise serializers.ValidationError("Invalid credentials.")
+
+        if not user.is_active:
+            raise serializers.ValidationError("User account is disabled.")
+
+        refresh = RefreshToken.for_user(user)
+        user_data = UserSerializer(user).data
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": user_data,
+        }
