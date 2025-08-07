@@ -1,3 +1,5 @@
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken,TokenError
 from rest_framework import generics, status
@@ -5,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from account.models import User
 from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer
+from account.token import account_activation_token
 
 
 
@@ -17,12 +20,12 @@ class RegisterView(generics.CreateAPIView):
 class VerifyEmailView(APIView):
     def get(self, request):
         token = request.GET.get("token")
+        uid = request.GET.get('uid')
         try:
-            access_token = AccessToken(token)
-            user_id = access_token['user_id']
+            user_id = force_str(urlsafe_base64_decode(uid))
             user = User.objects.get(id=user_id)
 
-            if not user.is_active:
+            if user is not None and account_activation_token.check_token(user, token):
                 user.is_active = True
                 user.save()
 
