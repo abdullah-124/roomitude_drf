@@ -52,9 +52,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 # user serializer for sending user data to the user account
 class UserSerializer(serializers.ModelSerializer):
+    profile_image_url = serializers.SerializerMethodField(required=False, allow_null=True)
+
     class Meta:
         model = User
         exclude = ['password']
+
+    def get_profile_image_url(self, obj):
+        if obj.profile_image:
+            return f"{settings.BASE_URL}{obj.profile_image.url}"
+        return None
+    
+# USER UPDATE SERIALIZER
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = User
+        fields = ['first_name', 'last_name', 'profile_image', 'address', 'phone_number','date_of_birth' ]
+
 
 # user login serializer
 
@@ -66,19 +80,22 @@ class UserLoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         password = attrs.get('password')
+
         if not username or not password:
             raise serializers.ValidationError("Both username and password are required.")
-        
-        # check the username, and password 
-        user = authenticate(username=username,password=password)
+
+        # Authenticate
+        user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid credentials.")
 
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled.")
 
+        # Generate tokens
         refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user).data
+
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),

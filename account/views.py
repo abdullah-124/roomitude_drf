@@ -2,11 +2,12 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken,TokenError
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from account.models import User
-from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer
+from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer, UserUpdateSerializer
 from account.token import account_activation_token
 
 
@@ -15,6 +16,19 @@ from account.token import account_activation_token
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    def create(self, request, *args, **kwargs):
+        # Use the serializer’s own create() method
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()  # This calls your serializer's create()
+        return Response(
+            {
+                "text":f"Your account has been created. We have sent an email to {user.email}, please verify your account.",
+                "status": "success"
+                
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 # verify email 
 class VerifyEmailView(APIView):
@@ -31,7 +45,8 @@ class VerifyEmailView(APIView):
 
             refresh = RefreshToken.for_user(user)
             # serialize user data
-            user_data = UserSerializer(user).data
+            user_serializer = UserSerializer(user, context={'request':request})
+            user_data = user_serializer.data
             return Response({
                 "message": "Email verified, login successful.",
                 "access": str(refresh.access_token),
@@ -57,9 +72,28 @@ class UserLogoutView(APIView):
         try:
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
-            token.blacklist()  # marks the refresh token as invalid
-            return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
-        except KeyError:
-            return Response({"detail": "Refresh token not provided."}, status=status.HTTP_400_BAD_REQUEST)
-        except TokenError:
-            return Response({"detail": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# USER UPDATE VIEW
+class UserUpdateView(APIView):
+    parser_classes = [MultiPartParser, FormParser]  # allows FormData uploads
+
+    def put(self, request):
+        try:
+            serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+            if serializer.is_valid():
+                user = serializer.save()  # save updates
+                print(user)
+                # Serialize updated user instance to send back
+                updated_user_serializer = UserSerializer(user)
+                return Response({
+                    'user': updated_user_serializer.data,
+                    'message': {'text': 'Profile updated successfull', "status":'success'}
+                }, status=status.HTTP_200_OK)
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e :
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
