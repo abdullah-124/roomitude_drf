@@ -1,7 +1,6 @@
+from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
 from products.models import FurnitureProduct
 from products.serializers import FurnitureProductSerializer
 
@@ -15,9 +14,10 @@ class ProductView(GenericAPIView, ListModelMixin):
         qs = super().get_queryset()
         params = self.request.query_params
 
-        category = params.get('category')
-        if category:
-            qs = qs.filter(category__slug=category)
+        categories = params.get('categories')
+        if categories:
+            categories_list = categories.split(',')
+            qs = qs.filter(category__slug__in=categories_list).distinct()
 
         price_min = params.get('price_min')
         if price_min and price_min.isdigit():
@@ -36,31 +36,30 @@ class ProductView(GenericAPIView, ListModelMixin):
             tag_list = tags.split(',')
             qs = qs.filter(tags__slug__in=tag_list).distinct()
 
-        rating_min = params.get('rating_min')
-        if rating_min:
-            try:
-                rating_min_float = float(rating_min)
-                qs = qs.filter(average_rating__gte=rating_min_float)
-            except ValueError:
-                pass
-
+        # 'trending', 'best_sellers', 'featured', 'disscount'
         featured = params.get('featured')
         if featured and featured.lower() == 'true':
             qs = qs.filter(is_featured=True)
-
-        discounted = params.get('discounted')
+        discounted = params.get('discount')
         if discounted and discounted.lower() == 'true':
-            qs = qs.filter(discount_price__lt=0)
+            qs = qs.filter(discount__gt = 0).order_by('-discount')
+        trending = params.get('trending')
+        if trending and trending.lower() == 'true':
+            qs = qs.order_by('-views')
+        best_sellers = params.get('best_sellers')
+        if best_sellers and best_sellers.lower() == 'true':
+            print('dd')
+            qs = qs.order_by('-total_sales')
 
         # Sorting
-        sort = params.get('sort')
+        sort = params.get('sortBy')
         sort_mapping = {
             'price_asc': 'price',
             'price_desc': '-price',
             'newest': '-created_at',
             'oldest': 'created_at',
             'best_sellers': '-total_sales',
-            'rating': '-rating',
+            'rating': '-total_ratings',
         }
         if sort in sort_mapping:
             qs = qs.order_by(sort_mapping[sort])
