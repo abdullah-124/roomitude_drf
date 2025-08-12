@@ -53,7 +53,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 # user serializer for sending user data to the user account
 class UserSerializer(serializers.ModelSerializer):
     profile_image_url = serializers.SerializerMethodField(required=False, allow_null=True)
-
+    profile_image = serializers.ImageField(use_url = True)
     class Meta:
         model = User
         exclude = ['password']

@@ -80,6 +80,7 @@ class UserLogoutView(APIView):
 # USER UPDATE VIEW
 class UserUpdateView(APIView):
     parser_classes = [MultiPartParser, FormParser]  # allows FormData uploads
+    permission_classes = [IsAuthenticated]
 
     def put(self, request):
         try:
