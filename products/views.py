@@ -54,8 +54,8 @@ class ProductView(GenericAPIView, ListModelMixin):
         # Sorting
         sort = params.get('sortBy')
         sort_mapping = {
-            'price_asc': 'price',
-            'price_desc': '-price',
+            'price_asc': '-price',
+            'price_desc': 'price',
             'newest': '-created_at',
             'oldest': 'created_at',
             'best_sellers': '-total_sales',

@@ -9,9 +9,20 @@ from category.models import Category
 # Create your models here.
 # TAG MODEL FOR PRODUCT 
 class Tag(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(unique=True)
-
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True, blank=True)
+    def save(self, *args, **kwargs):
+        slug = self.slug
+        print('user',slug)
+        if(not slug):
+            slug = slugify(self.name)
+            self.slug = slug
+            print('after slugify', slug)
+        existing = Tag.objects.filter(slug=slug).first()
+        if existing:
+            # If exists, update current instance to match the existing one
+            self.id = existing.id  # this makes save() do an update instead of insert
+        super().save(*args, **kwargs)
     def __str__(self):
         return self.name
 

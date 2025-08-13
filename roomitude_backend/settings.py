@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'account',
     'category',
     'products',
-    'brand'
+    'brand',
+    'cart'
 
 ]
 # restframework settings 
