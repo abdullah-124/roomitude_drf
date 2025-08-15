@@ -50,7 +50,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 class AddToCartSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField(default=1, min_value=1)
-
+    
     def create(self, validated_data):
         user = self.context['request'].user
         product = FurnitureProduct.objects.get(id=validated_data['product_id'])

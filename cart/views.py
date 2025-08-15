@@ -20,13 +20,13 @@ class CartViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    """Add item to cart - handles existing items"""
+    # Add item to cart - handles existing items 
     @action(detail=False, methods=['post'])
     def add_item(self, request):
         serializer = AddToCartSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             cart_item = serializer.save()
-            response_serializer = CartItemSerializer(cart_item)
+            response_serializer = CartItemSerializer(cart_item, context = {'request': request})
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @action(detail=True, methods=['patch'])
@@ -42,6 +42,20 @@ class CartViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         
         return Response({'error': 'Invalid quantity'}, status=status.HTTP_400_BAD_REQUEST)
+    # remove item form cart 
+    @action(detail=True, methods=['delete'])
+    def remove_cart_item(self, request, pk=None):
+        try:
+            cart_item = get_object_or_404(CartItem, pk=pk, user=request.user)
+            cart_item.delete()
+            return Response(
+                {"message": f"Cart item {pk} deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Exception as e: 
+            return Response({'error': str(e)})
+
+
 
     @action(detail=False, methods=['delete'])
     def clear_cart(self, request):
