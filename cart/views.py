@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 # local 
+from products.models import FurnitureProduct
 from cart.serializers import CartItemSerializer, AddToCartSerializer
 from cart.models import CartItem
 
@@ -64,7 +65,57 @@ class CartViewSet(viewsets.ModelViewSet):
         return Response({
             'message': f'Removed {deleted_count} items from cart'
         }, status=status.HTTP_204_NO_CONTENT)
+    @action(detail=False, methods=['post'], url_path='merge')
+    def merge_cart(self, request):
+        print('inside merge api endpoint')
+        user = request.user
+        items = request.data.get("items", [])
 
+        if not user.is_authenticated:
+            return Response({"error": "Authentication required"},status=status.HTTP_401_UNAUTHORIZED)
+
+        results = []
+        for item in items:
+            product_id = item['product_id']
+            quantity = item['quantity']
+            if not product_id:
+                continue  # skip invalid items
+            try:
+                product = FurnitureProduct.objects.get(id=product_id)
+            except FurnitureProduct.DoesNotExist:
+                results.append({
+                    "product_id": product_id,
+                    "name": None,
+                    "status": "not_found"
+                })
+                continue  # skip items that don't exist
+
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                user=user,
+                product=product,
+                defaults={"quantity": quantity}
+            )
+
+            # If it already exists, update quantity
+            if not created:
+                cart_item.quantity = max(cart_item.quantity, quantity)
+                cart_item.save()
+                results.append({
+                "product_id": product.id,
+                "name": product.name,
+                "status": 'updated'
+            })
+            else :
+                results.append({ "product_id": product.id, "name": product.name, "status": 'added'
+            })
+        return Response(
+            {
+                "message": "Cart merged successfully",
+                "items": results
+            },
+            status=status.HTTP_200_OK
+        )
     @action(detail=False, methods=['get'])
     def total(self, request):
         """Get cart total"""

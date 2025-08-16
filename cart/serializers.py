@@ -53,8 +53,14 @@ class AddToCartSerializer(serializers.Serializer):
     
     def create(self, validated_data):
         user = self.context['request'].user
-        product = FurnitureProduct.objects.get(id=validated_data['product_id'])
         quantity = validated_data['quantity']
+        product_id = validated_data['product_id']
+        try:
+            product = FurnitureProduct.objects.get(id=product_id)
+        except Exception :
+            raise serializers.ValidationError(
+                {"error": f"Product with id {product_id} does not exist."}
+            )
         
         cart_item, created = CartItem.objects.get_or_create(
             user=user,
@@ -63,7 +69,7 @@ class AddToCartSerializer(serializers.Serializer):
         )
         
         if not created:
-            cart_item.quantity += quantity
+            cart_item.quantity += 1
             cart_item.save()
             
         return cart_item

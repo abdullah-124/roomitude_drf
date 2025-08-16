@@ -6,6 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from account.models import User
 from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer, UserUpdateSerializer
 from account.token import account_activation_token
@@ -62,7 +63,15 @@ class VerifyEmailView(APIView):
 class UserLoginView(APIView):
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            return Response(
+                {"message": "Invalid login credentials", "errors": e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
     
 class UserLogoutView(APIView):
