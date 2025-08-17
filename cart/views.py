@@ -74,7 +74,6 @@ class CartViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Response({"error": "Authentication required"},status=status.HTTP_401_UNAUTHORIZED)
 
-        results = []
         for item in items:
             product_id = item['product_id']
             quantity = item['quantity']
@@ -83,11 +82,6 @@ class CartViewSet(viewsets.ModelViewSet):
             try:
                 product = FurnitureProduct.objects.get(id=product_id)
             except FurnitureProduct.DoesNotExist:
-                results.append({
-                    "product_id": product_id,
-                    "name": None,
-                    "status": "not_found"
-                })
                 continue  # skip items that don't exist
 
             # Get or create cart item
@@ -101,18 +95,12 @@ class CartViewSet(viewsets.ModelViewSet):
             if not created:
                 cart_item.quantity = max(cart_item.quantity, quantity)
                 cart_item.save()
-                results.append({
-                "product_id": product.id,
-                "name": product.name,
-                "status": 'updated'
-            })
-            else :
-                results.append({ "product_id": product.id, "name": product.name, "status": 'added'
-            })
+            cart_Model = CartItem.objects.filter(user=user)
+            results = CartItemSerializer(cart_Model, many=True, context={'request': self.request})
         return Response(
             {
                 "message": "Cart merged successfully",
-                "items": results
+                "items": results.data
             },
             status=status.HTTP_200_OK
         )

@@ -2,11 +2,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path,include
-from roomitude_backend.views import my_function
+from roomitude_backend.views import my_function, HomePageDataView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('my_function/', my_function),
+    path('data/', HomePageDataView.as_view()),
     path('', include('site_admin.urls')),
     path('api/account/', include('account.urls')),
     path('api/categories/', include('category.urls')),

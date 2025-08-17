@@ -70,6 +70,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React dev server
     "http://127.0.0.1:3000",
+    'https://l6k49jdl-5173.inc1.devtunnels.ms'
 ]
 ROOT_URLCONF = 'roomitude_backend.urls'
 
