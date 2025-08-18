@@ -18,7 +18,6 @@ class ProductView(GenericAPIView, ListModelMixin):
         if categories:
             categories_list = categories.split(',')
             qs = qs.filter(category__slug__in=categories_list).distinct()
-
         price_min = params.get('price_min')
         if price_min and price_min.isdigit():
             qs = qs.filter(price__gte=float(price_min))
@@ -50,7 +49,9 @@ class ProductView(GenericAPIView, ListModelMixin):
         if best_sellers and best_sellers.lower() == 'true':
             print('dd')
             qs = qs.order_by('-total_sales')
-
+        category = params.get('category')
+        if category:
+            qs = qs.filter(category__slug=category)
         # Sorting
         sort = params.get('sortBy')
         sort_mapping = {

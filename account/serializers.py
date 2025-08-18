@@ -1,14 +1,15 @@
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.urls import reverse
 from django.conf import settings
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
 from account.token import account_activation_token
+from rest_framework_simplejwt.tokens import RefreshToken
+from cart.serializers import CartItemSerializer
+from wishlist.serializers import WishlistSerializer
 
 User = get_user_model()
 
@@ -52,13 +53,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 # user serializer for sending user data to the user account
 class UserSerializer(serializers.ModelSerializer):
-    profile_image_url = serializers.SerializerMethodField(required=False, allow_null=True)
-    profile_image = serializers.ImageField(use_url = True)
+    profile_image = serializers.SerializerMethodField(required=False, allow_null=True)
     class Meta:
         model = User
         exclude = ['password']
 
-    def get_profile_image_url(self, obj):
+    def get_profile_image(self, obj):
         if obj.profile_image:
             return f"{settings.BASE_URL}{obj.profile_image.url}"
         return None
@@ -92,12 +92,4 @@ class UserLoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled.")
 
-        # Generate tokens
-        refresh = RefreshToken.for_user(user)
-        user_data = UserSerializer(user).data
-
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "user": user_data,
-        }
+        return user

@@ -69,7 +69,7 @@ class HomePageDataView(APIView):
     user = self.request.user
     if(user.is_authenticated):
       wishlistModel = Wishlist.objects.filter(user=user)
-      wishlist = WishlistSerializer(wishlistModel, many=True)
+      wishlist = WishlistSerializer(wishlistModel, many=True ,context={'request':self.request})
       return wishlist.data
     return []
   # categories
@@ -80,7 +80,7 @@ class HomePageDataView(APIView):
         return cached
     try:
       categoriesModel = Category.objects.annotate(product_count=Count("products") )
-      categories = CategoryWithCountSerializer(categoriesModel, many=True)
+      categories = CategoryWithCountSerializer(categoriesModel, many=True, context={'request': self.request})
       data = categories.data
       cache.set(cache_key, data, 600)  # 10 minutes
       return data
@@ -96,18 +96,24 @@ class HomePageDataView(APIView):
     if(cached): 
       return cached
     try:
-      queryset = FurnitureProduct.objects.filter(in_stock=True, image__isnull = False)
-
+      queryset = FurnitureProduct.objects.filter(in_stock=True).exclude(image__exact='')
+      featuredProduct = queryset.filter(is_featured = True)[:10]
+      queryset = queryset.exclude(id__in=featuredProduct.values_list('id', flat=True))
+      
       # Weighted score: sales (50%) + ratings (30%) + views (20%)
       queryset = queryset.annotate(
           score=ExpressionWrapper(
               (F('discount') + F('total_sales') * 0.5) + (F('total_ratings') * 0.5) / F('total_review') + (F('views') * 0.2),
               output_field=FloatField()
           )
-      ).order_by('-score')[:12]
-      products = FurnitureProductSerializer(queryset, many=True)
-      cache.set(cache_key, products.data, 300)
-      return products.data
+      ).order_by('-score')[:8]
+      result = {}
+      products = FurnitureProductSerializer(queryset, many=True, context={'request': self.request})
+      featured = FurnitureProductSerializer(featuredProduct, many=True, context={'request':self.request})
+      result['products'] = products.data
+      result['featured_products'] = featured.data
+      cache.set(cache_key, result, 300)
+      return result
   
     except Exception as e:
       print(str(e))

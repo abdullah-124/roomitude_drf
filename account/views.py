@@ -10,7 +10,8 @@ from rest_framework.exceptions import ValidationError
 from account.models import User
 from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer, UserUpdateSerializer
 from account.token import account_activation_token
-
+from cart.serializers import CartItemSerializer
+from wishlist.serializers import WishlistSerializer
 
 
 # user registration view
@@ -62,17 +63,29 @@ class VerifyEmailView(APIView):
 # USER LOGIN VIEW
 class UserLoginView(APIView):
     def post(self, request):
-        serializer = UserLoginSerializer(data=request.data)
+        serializer = UserLoginSerializer(data=request.data, context={'request':self.request})
         try:
             serializer.is_valid(raise_exception=True)
+            # validated_data returns the user object (from your serializer)
+            user = serializer.validated_data  
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            user_data = UserSerializer(user).data
+            cart = CartItemSerializer(user.cart_items.all().select_related('product'), many=True, context={'request': self.request})
+            wishlist = WishlistSerializer(user.wishlist_items.all().select_related('product'), many=True, context={'request': self.request})
         except ValidationError as e:
             return Response(
                 {"message": "Invalid login credentials", "errors": e.detail},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": user_data,
+            'cart': cart.data,
+            'wishlist': wishlist.data,
+        },status=status.HTTP_200_OK)
+# 
     
 class UserLogoutView(APIView):
     permission_classes = [IsAuthenticated]  # requires valid access token

@@ -50,8 +50,8 @@ class CartViewSet(viewsets.ModelViewSet):
             cart_item = get_object_or_404(CartItem, pk=pk, user=request.user)
             cart_item.delete()
             return Response(
-                {"message": f"Cart item {pk} deleted successfully"},
-                status=status.HTTP_204_NO_CONTENT
+                {"message": f"Cart item {cart_item.product.name} deleted successfully"},
+                status=status.HTTP_200_OK
             )
         except Exception as e: 
             return Response({'error': str(e)})
