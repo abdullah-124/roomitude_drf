@@ -19,18 +19,21 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     def create(self, request, *args, **kwargs):
-        # Use the serializer’s own create() method
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()  # This calls your serializer's create()
-        return Response(
-            {
-                "text":f"Your account has been created. We have sent an email to {user.email}, please verify your account.",
-                "status": "success"
-                
-            },
-            status=status.HTTP_201_CREATED
-        )
+        try:
+            # Use the serializer’s own create() method
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()  # This calls your serializer's create()
+            return Response(
+                {
+                    "text":f"Your account has been created. We have sent an email to {user.email}, please verify your account.",
+                    "status": "success"
+                    
+                },
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_409_CONFLICT)
 
 # verify email 
 class VerifyEmailView(APIView):
