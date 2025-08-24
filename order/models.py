@@ -12,7 +12,7 @@ STATUS_CHOICES = [
     ]
 
 PAYMENT_METHODS = [
-        ("cod", "Cash on Delivery"),
+        ("cash_on_delivery", "Cash on Delivery"),
         ("card", "Credit/Debit Card"),
         ("bkash", "bKash"),
         ("paypal", "PayPal"),
@@ -22,7 +22,7 @@ class Order(models.Model):
     # Billing / shipping info (can be copied from user profile at time of order)
     full_name = models.CharField(max_length=255)
     email = models.EmailField()
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField()
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20)
@@ -35,7 +35,7 @@ class Order(models.Model):
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     # Payment / status
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default="cod")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default="card")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     is_paid = models.BooleanField(default=False)
     transaction_id = models.CharField(max_length=100, blank=True, null=True)
@@ -45,6 +45,8 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.user}"
+    class Meta:
+        ordering = ['-created_at']
     
     
 class OrderItem(models.Model):

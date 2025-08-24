@@ -21,6 +21,7 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             # Use the serializer’s own create() method
+            print(request.data)
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()  # This calls your serializer's create()
@@ -76,9 +77,9 @@ class UserLoginView(APIView):
             user_data = UserSerializer(user).data
             cart = CartItemSerializer(user.cart_items.all().select_related('product'), many=True, context={'request': self.request})
             wishlist = WishlistSerializer(user.wishlist_items.all().select_related('product'), many=True, context={'request': self.request})
-        except ValidationError as e:
+        except Exception as e:
             return Response(
-                {"message": "Invalid login credentials", "errors": e.detail},
+                {"message": str(e.detail)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         return Response({

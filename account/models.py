@@ -12,3 +12,7 @@ class User(AbstractUser):
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     date_of_birth = models.DateField(blank=True, null=True)
+    
+    def get_full_name(self):
+        name = f"{self.first_name} {self.last_name}".strip()
+        return name if name else self.username
