@@ -31,7 +31,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_activation_token.make_token(user)
         # localhost5173 is frontend part where user made the registration and frontend will make a request when user click on this link from his email 
-        verify_url = f"http://localhost:5173/verify_email/?uid={uid}&token={token}"
+        verify_url = f"https://roomitude-njm6.vercel.app/verify_email/?uid={uid}&token={token}"
 
         subject = "Verify Your Roomitude Account"
         from_email = settings.DEFAULT_FROM_EMAIL

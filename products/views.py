@@ -1,4 +1,5 @@
 from django.db.models import F, FloatField, ExpressionWrapper
+from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from products.models import FurnitureProduct
@@ -76,4 +77,17 @@ class SingleProductView(GenericAPIView, RetrieveModelMixin):
     serializer_class = FurnitureProductSerializer
 
     def get(self,req, pk):
-        return self.retrieve(req, pk=pk)
+        product = self.get_object()
+        serializer = self.get_serializer(product)
+
+        # Example: get related products by category (excluding the current one)
+        related_products = FurnitureProduct.objects.filter(
+            category=product.category
+        ).exclude(id=product.id)[:2]  # limit 2
+
+        related_serializer = self.get_serializer(related_products, many=True)
+
+        return Response({
+            "product": serializer.data,
+            "related_products": related_serializer.data,
+        })

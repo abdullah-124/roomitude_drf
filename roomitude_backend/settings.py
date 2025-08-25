@@ -13,7 +13,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['roomitude.pythonanywhere.com']
 # abstract user model
 AUTH_USER_MODEL = 'account.User'
 
@@ -72,7 +72,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React dev server
     "http://127.0.0.1:3000",
-    'https://l6k49jdl-5173.inc1.devtunnels.ms'
+    'https://roomitude-njm6.vercel.app'
 ]
 ROOT_URLCONF = 'roomitude_backend.urls'
 
@@ -137,7 +137,8 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # media 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
