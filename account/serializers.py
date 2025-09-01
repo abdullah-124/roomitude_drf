@@ -93,3 +93,12 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("User account is disabled.")
 
         return user
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=6)
+    confirm_password = serializers.CharField(write_only=True, min_length=6)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("New password and confirm password do not match.")
+        return attrs

@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from account.models import User
-from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer, UserUpdateSerializer
+from account.serializers import UserSerializer,RegisterSerializer,UserLoginSerializer, UserUpdateSerializer, PasswordChangeSerializer
 from account.token import account_activation_token
 from cart.serializers import CartItemSerializer
 from wishlist.serializers import WishlistSerializer
@@ -124,3 +124,19 @@ class UserUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e :
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+    # {"current_password":"admin", "new_password": "admina", "confirm_password": "admina"}
+    def put(self, request):
+        serializer = PasswordChangeSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data['current_password']):
+                return Response({"message": "Wrong password."}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+
+        return Response({'message': str(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)

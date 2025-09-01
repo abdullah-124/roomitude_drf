@@ -1,4 +1,4 @@
-from django.db.models import F, FloatField, ExpressionWrapper
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -91,3 +91,27 @@ class SingleProductView(GenericAPIView, RetrieveModelMixin):
             "product": serializer.data,
             "related_products": related_serializer.data,
         })
+        
+# PRODUCT SEARCH VIEW
+class ProductSearchView(GenericAPIView, ListModelMixin):
+    serializer_class = FurnitureProductSerializer
+    queryset = FurnitureProduct.objects.all()
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        params = self.request.query_params
+
+        q = params.get('q')
+        if q:
+            qs = qs.filter(
+            Q(name__icontains=q) |
+            Q(description__icontains=q) |
+            Q(category__name__icontains=q)
+        )
+
+        return qs
+    
+    def get(self, request, *args, **kwargs):    
+        search_result = self.get_queryset()[:5]
+        products = self.serializer_class(search_result, many=True, context={'request': request})
+        return Response({'result': products.data})
