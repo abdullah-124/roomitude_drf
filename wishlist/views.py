@@ -24,6 +24,7 @@ class WishList_View(ModelViewSet):
         """Add a product to wishlist"""
         try:
             product_id = request.data.get("product_id")
+            print('this is product id ', product_id)
             if not product_id:
                 return Response({"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
